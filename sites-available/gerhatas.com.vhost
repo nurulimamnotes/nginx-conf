@@ -1,0 +1,62 @@
+server {
+        listen 128.199.122.79:80;
+        server_name gerhatas.com www.gerhatas.com;
+        root   /var/www/gerhatas.com/web;
+        index index.html index.htm index.php index.cgi index.pl index.xhtml;
+
+        error_log /var/log/ispconfig/httpd/gerhatas.com/error.log;
+        access_log /var/log/ispconfig/httpd/gerhatas.com/access.log combined;
+
+       
+        if (!-e $request_filename) {
+          rewrite ^.*$ /index.php last;
+        }
+
+        location ~ /\. {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
+
+        location = /favicon.ico {
+            log_not_found off;
+            access_log off;
+        }
+
+        location = /robots.txt {
+            allow all;
+            log_not_found off;
+            access_log off;
+        }
+
+        location /stats/ {
+
+            index index.html index.php;
+            auth_basic "Members Only";
+            auth_basic_user_file /var/www/clients/client1/web4/web/stats/.htpasswd_stats;
+        }
+
+        location ^~ /awstats-icon {
+            alias /usr/share/awstats/icon;
+        }
+
+        location ~ \.php$ {
+            try_files /41b4d1c53a38f7f94683602b7daad1ce.htm @php;
+        }
+
+        location @php {
+            try_files $uri =404;
+            include /etc/nginx/fastcgi_params;
+            fastcgi_pass unix:/var/lib/php5-fpm/web4.sock;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_intercept_errors on;
+        }
+
+
+
+
+
+
+
+}

@@ -1,0 +1,75 @@
+server {
+	listen 1000 ssl spdy;
+	ssl on;
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+	ssl_certificate /var/www/clients/client0/web1/ssl/bits.co.id.crt;
+	ssl_certificate_key /var/www/clients/client0/web1/ssl/bits.co.id.key;		
+
+error_page 497 https://$host:$server_port$request_uri;
+
+    # Send all necessary headers to ghost
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Static files
+    location ~* \.(jpg|jpeg|svg|png|gif|ico|css|js|eot|woff)$ {
+        # Use the nginx cache zone called APP
+#        proxy_cache APP;
+        # For valid responses, cache it for 30 days
+        proxy_cache_valid 200 30d;
+        # For not found, cache it for 10 minutes
+        proxy_cache_valid 404 10m;
+
+        # Ghost sends Cache-Control max-age=0 on CSS/JS for now
+        # See https://github.com/TryGhost/Ghost/issues/1405?source=c#issuecomment-28196957
+        proxy_ignore_headers "Cache-Control";
+        access_log off;
+        # Allow the browser to cache static files for 30 days
+        expires 30d;
+        proxy_pass http://proxy_app;
+    }
+
+    # API
+    location ~ ^(?:ghost/api) {
+        # Tell the browser to don't cache API calls
+        expires 0;
+        add_header Cache-Control "no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0";
+        proxy_pass http://proxy_app;
+    }
+
+    # Admin
+    location ~ ^(?:ghost) {
+        # For extra security, add a basic auth for admin area
+        auth_basic "Restricted";
+        auth_basic_user_file /etc/nginx/include/htpasswd;
+
+        # Tell the browser to don't cache API calls
+        expires 0;
+        add_header Cache-Control "no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0";
+        proxy_pass http://proxy_app;
+    }
+
+    # Pages
+    location / {
+        # Use the nginx cache zone called APP
+#        proxy_cache APP;
+        # For valid responses, cache it for 1 day
+        proxy_cache_valid 200 1d;
+        # For not found, cache it for 10 minutes
+        proxy_cache_valid 404 10m;
+
+        # Ghost sends cookies and cache headers that breaks the nginx caching, so we have to ignore them
+        proxy_ignore_headers "Set-Cookie";
+        proxy_hide_header "Set-Cookie";
+        proxy_ignore_headers "Cache-Control";
+        proxy_hide_header "Cache-Control";
+        proxy_hide_header "Etag";
+
+        # Allow the browser to cache the full page for 10 minutes
+        expires 10m;
+
+        proxy_pass http://proxy_app;
+    }
+}

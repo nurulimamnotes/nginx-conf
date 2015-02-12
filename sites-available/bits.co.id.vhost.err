@@ -1,0 +1,125 @@
+server {
+        listen *:80;
+
+        listen *:443 ssl;
+		ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_certificate /var/www/clients/client0/web1/ssl/bits.co.id.crt;
+        ssl_certificate_key /var/www/clients/client0/web1/ssl/bits.co.id.key;
+
+        server_name bits.co.id ;
+
+        root   /var/www/bits.co.id/web;
+
+
+
+        index index.html index.htm index.php index.cgi index.pl index.xhtml;
+
+
+        location ~ \.shtml$ {
+            ssi on;
+        }
+
+
+        error_page 400 /error/400.html;
+        error_page 401 /error/401.html;
+        error_page 403 /error/403.html;
+        error_page 404 /error/404.html;
+        error_page 405 /error/405.html;
+        error_page 500 /error/500.html;
+        error_page 502 /error/502.html;
+        error_page 503 /error/503.html;
+        recursive_error_pages on;
+        location = /error/400.html {
+
+            internal;
+        }
+        location = /error/401.html {
+
+            internal;
+        }
+        location = /error/403.html {
+
+            internal;
+        }
+        location = /error/404.html {
+
+            internal;
+        }
+        location = /error/405.html {
+
+            internal;
+        }
+        location = /error/500.html {
+
+            internal;
+        }
+        location = /error/502.html {
+
+            internal;
+        }
+        location = /error/503.html {
+
+            internal;
+        }
+
+        error_log /var/log/ispconfig/httpd/bits.co.id/error.log;
+        access_log /var/log/ispconfig/httpd/bits.co.id/access.log combined;
+
+        location ~ /\. {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
+
+        location = /favicon.ico {
+            log_not_found off;
+            access_log off;
+        }
+
+        location = /robots.txt {
+            allow all;
+            log_not_found off;
+            access_log off;
+        }
+
+        location /stats/ {
+
+            index index.html index.php;
+            auth_basic "Members Only";
+            auth_basic_user_file /var/www/clients/client0/web1/web/stats/.htpasswd_stats;
+        }
+
+        location ^~ /awstats-icon {
+            alias /usr/share/awstats/icon;
+        }
+
+        location ~ \.php$ {
+            try_files /11deaf71c68751501ebb87e9c4dd4e6b.htm @php;
+        }
+
+        location @php {
+            try_files $uri =404;
+            include /etc/nginx/fastcgi_params;
+            fastcgi_pass unix:/var/lib/php5-fpm/web1.sock;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_intercept_errors on;
+        }
+
+        location /cgi-bin/ {
+            try_files $uri =404;
+            include /etc/nginx/fastcgi_params;
+            root /var/www/clients/client0/web1;
+            gzip off;
+            fastcgi_pass  unix:/var/run/fcgiwrap.socket;
+            fastcgi_index index.cgi;
+            fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+            fastcgi_intercept_errors on;
+        }
+
+
+
+
+
+
+}
